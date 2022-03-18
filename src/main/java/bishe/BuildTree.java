@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author Lixuhang
@@ -13,14 +14,14 @@ import java.util.Map;
  */
 public class BuildTree {
     public static void main(String[] args) throws IOException {
-        File file1 = new File("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\noEntry1.tar");
+        File file1 = new File("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\layer8.7.tar");
         FileInputStream inputStream = new FileInputStream(file1);
-        FileTreeNode node1 = getLayerAndName.analyseTarAndBuildTree(inputStream);
-        File file2 = new File("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\noEntry2.tar");
+//        FileTreeNode node1 = getLayerAndName.analyseTarAndBuildTree((ZipInputStream) inputStream);
+        File file2 = new File("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\layer10.7.1.tar");
         FileInputStream inputStream1 = new FileInputStream(file2);
-        FileTreeNode node2 = getLayerAndName.analyseTarAndBuildTree(inputStream1);
-        Map<FileTreeNode,FileTreeNode> result = findAllSameTree(node1,node2);
-        System.out.println(result);
+//        FileTreeNode node2 = getLayerAndName.analyseTarAndBuildTree(inputStream1);
+//        Map<FileTreeNode,FileTreeNode> result = findAllSameTree(node1,node2);
+//        System.out.println(result);
 
     }
 
@@ -63,10 +64,14 @@ public class BuildTree {
 //        }
 
     }
-    //在targetNode为根节点树中的非叶子节点中，寻找findNode的相似节点(接下来进行多叉树的深度优先先序遍历
+    /**
+     *
+     * @param findNode 在其中寻找的树
+     * @param targetNode 需要找到的相似单节点
+     * @param result 结果
+     * @return 用于表示是否继续，我们认为在一个树中只有一个相似的单节点
+     */
     public static boolean findSameNode(FileTreeNode findNode,FileTreeNode targetNode,SameNodeResult result){
-        //true和false用来判断是否继续，用result是否为null来进行
-
         //判断非叶子节点
         if(findNode.getSubNodeNum() == 0){
             //我的子节点数为0了，后面的其他同级节点肯定也等于0
@@ -75,10 +80,11 @@ public class BuildTree {
         //由于是先序遍历，所以先进行判断
         NodeCompareResult tempResult = compareNode(findNode,targetNode);
         if(tempResult.isTarget()){
-           boolean isResult = compareTree(findNode,targetNode);
+           boolean isResult = compareTree(findNode,targetNode,true);
            if(isResult){
                result.setFind(true);
                result.setTargetNode(findNode);
+               //找到目标的节点
                return false;
            }
         }
@@ -102,18 +108,16 @@ public class BuildTree {
 
     public static NodeCompareResult compareNode(FileTreeNode findNode, FileTreeNode targetNode){
         NodeCompareResult result = new NodeCompareResult();
-        //如果名字、子节点数量和层数都相等，则认为其是可以用来比较的完全相似点
-        if(findNode.getNodeName().equals(targetNode.getNodeName())){
+        //子节点数量和层数都相等，则认为其是可以用来比较的完全相似点(名字不同，当其子节点都相同，也有可能属于相似的节点)
             if(findNode.getSubNodeNum() == targetNode.getSubNodeNum()){
                 if(findNode.getSubTreeHigh() == targetNode.getSubTreeHigh()){
                     result.setTarget(true);
                 }
             }
-        }
         else{
             result.setTarget(false);
         }
-        //名字不同，则不可能属于完全相似点，则需要进行是否可以继续判断子节点是否
+
         if(findNode.getSubNodeNum() < targetNode.getSubNodeNum()){
             result.setContinue(false);
             return result;
@@ -127,19 +131,36 @@ public class BuildTree {
         result.setContinue(true);
         return result;
     }
-    //比较两个树节点是否完全相同，这里使用了深度优先遍历
-    public static boolean compareTree(FileTreeNode node1,FileTreeNode node2){
-        if((!node1.getNodeName().equals(node2.getNodeName())) ||
-                (node1.getSubNodeNum()!=node2.getSubNodeNum()) ||
+
+    /**
+     * 比较两个树节点是否完全相同或者其子节点是否完全相同，这里使用了深度优先遍历
+     * 这个函数需要第三个参数，用于识别第一次迭代（第一次迭代时，我们不需要进行名字相同）
+     * 这个方法是，从外部调用，肯定是第一次
+     */
+
+    public static boolean compareTree(FileTreeNode node1,FileTreeNode node2,boolean isFirst){
+        //第一次判断相同时，则不需要名字
+        if(isFirst){
+            if ((node1.getSubNodeNum()!=node2.getSubNodeNum()) ||
                     (node1.getSubTreeHigh() != node2.getSubTreeHigh())){
-            return false;
+                return false;
+            }
         }
+        //之后的判断相同，需要判断名字
+        else {
+            if((!node1.getNodeName().equals(node2.getNodeName())) ||
+                    (node1.getSubNodeNum()!=node2.getSubNodeNum()) ||
+                    (node1.getSubTreeHigh() != node2.getSubTreeHigh())){
+                return false;
+            }
+        }
+
         ArrayList<FileTreeNode> subNodes1 = node1.getSubNode();
         ArrayList<FileTreeNode> subNodes2 = node2.getSubNode();
         for(int i = 0;i < subNodes1.size(); i++){
             FileTreeNode getNode1 = subNodes1.get(i);
             FileTreeNode getNode2 = subNodes2.get(i);
-            if(!compareTree(getNode1,getNode2)){
+            if(!compareTree(getNode1,getNode2,false)){
                 return false;
             }
         }

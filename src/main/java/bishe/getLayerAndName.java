@@ -29,14 +29,12 @@ import javax.swing.tree.TreeNode;
 public class getLayerAndName {
     public static void main(String[] args) throws IOException {
 //        File file = new File("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\i1c.zip");
-//
-        String outDir = "D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\newi1c.zip";
-        ZipFile zf = new ZipFile(outDir);
-        InputStream in = new BufferedInputStream(new FileInputStream("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\newi1c.zip"));
-        ZipInputStream zin  = new ZipInputStream(in);
-        ZipEntry ze;
-        while ((ze = zin.getNextEntry())!=null){
-            if(ze.isDirectory()){
+        InputStream in = new BufferedInputStream(new FileInputStream("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\p8python.tar"));
+        TarArchiveInputStream tarIn = new TarArchiveInputStream(in);
+        ArchiveEntry tea = null;
+        ArrayList<FileTreeNode> layerTrees = new ArrayList<>();
+        while ((tea = tarIn.getNextEntry())!=null){
+            if(tea.isDirectory()){
 //                System.out.println(ze.getName()+" directory");
 //                zin.skip(ze.getSize());
             }
@@ -44,12 +42,42 @@ public class getLayerAndName {
 //                if(ze.getName().equals("manifest.json")) {
 //                    findManifestResult(zin);
 //                }
-                if(ze.getName().contains("layer.tar")){
-                    //analyseTarAndBuildTree(zin);
+                if(tea.getName().contains("layer.tar")){
+                    layerTrees.add(analyseTarAndBuildTree(tarIn));
                 }
             }
-            zin.closeEntry();
         }
+
+        InputStream in2 = new BufferedInputStream(new FileInputStream("D:\\Learn-Thing\\编程语言\\java\\项目\\测试\\src\\main\\resources\\p10python.tar"));
+        TarArchiveInputStream tarIn2 = new TarArchiveInputStream(in2);
+        ArchiveEntry tea2 = null;
+        ArrayList<FileTreeNode> layerTrees2 = new ArrayList<>();
+        while ((tea2 = tarIn2.getNextEntry())!=null){
+            if(tea2.isDirectory()){
+//                System.out.println(ze.getName()+" directory");
+//                zin.skip(ze.getSize());
+            }
+            else {
+//                if(ze.getName().equals("manifest.json")) {
+//                    findManifestResult(zin);
+//                }
+                if(tea2.getName().contains("layer.tar")){
+                    layerTrees2.add(analyseTarAndBuildTree(tarIn2));
+                }
+            }
+        }
+
+        ArrayList<Map> allResult = new ArrayList<>();
+        Map<FileTreeNode,FileTreeNode> result = new HashMap<>();
+        for(FileTreeNode node1 : layerTrees){
+            for(FileTreeNode node2 : layerTrees2){
+                result = BuildTree.findAllSameTree(node1,node2);
+                if(result.size() > 0){
+                    allResult.add(result);
+                }
+            }
+        }
+        System.out.println("ss");
     }
 
     public static ArrayList<String> findManifestResult(ZipInputStream zipInputStream){
@@ -78,7 +106,7 @@ public class getLayerAndName {
         return sb.toString();
     }
 
-    public static FileTreeNode analyseTarAndBuildTree(FileInputStream fileInputStream) throws IOException {
+    public static FileTreeNode analyseTarAndBuildTree(TarArchiveInputStream fileInputStream) throws IOException {
         TarArchiveInputStream inputStream = new TarArchiveInputStream(fileInputStream);
         ArchiveEntry tae = null;
         int tempLevel = 0;
